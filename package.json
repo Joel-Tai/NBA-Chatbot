@@ -1,0 +1,25 @@
+{
+  "name": "your-project-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "cd frontend && npm install && cd ../mcp-client-typescript && npm install",
+    "dev:server": "cd mcp-client-typescript && npm run dev",
+    "dev:client": "cd frontend && npm run dev",
+    "build:client": "cd frontend && npm run build",
+    "build:server": "cd mcp-client-typescript && npm run build",
+    "start:server": "cd mcp-client-typescript && npm run start",
+    "start:client": "cd frontend && npm run start",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed",
+    "setup": "npm run install:all && npx playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "wait-on": "^7.2.0"
+  }
+}

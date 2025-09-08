@@ -1,0 +1,29 @@
+services:
+  db:
+    build: ./db
+    restart: always
+    env_file:
+      - ./db/.env
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  mcp-client:
+    build: ./mcp-client-typescript
+    #environment:
+    env_file: ./mcp-client-typescript/.env
+      # Add other env vars as needed
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - mcp-client
+
+volumes:
+  pgdata:
