@@ -16,7 +16,8 @@ jobs:
           username: ${{ secrets.GCP_VM_USER }}
           key: ${{ secrets.GCP_VM_SSH_KEY }}
           script: |
-            cd /home/${{ secrets.GCP_VM_USER }}/mcp-app/mcp-nba
+            cd /home/${{ secrets.GCP_VM_USER }}/nba_chatbot/NBA-Chatbot
             docker compose down
             git pull origin main
+            docker compose build --no-cache
             docker compose up -d
