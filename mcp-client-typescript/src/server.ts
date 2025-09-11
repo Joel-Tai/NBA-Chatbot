@@ -13,6 +13,7 @@ import pg from "pg";
 import { tools } from "./tools.js";
 import { ToolHandlers } from "./toolHandler.js";
 import { createRoutes } from "./routes.js";
+import { redisClient, connectRedis } from "./lib/redisClient.js";
 
 dotenv.config();
 
@@ -42,7 +43,7 @@ class ConcurrentServer {
 
     // Database pool handles concurrent connections automatically
     const dbUrl =
-      process.env.NODE_ENV === "deployment"
+      process.env.NODE_ENV === "production"
       ? process.env.DATABASE_URL
       : process.env.DATABASE_URL_LOCAL;
 
@@ -57,7 +58,7 @@ class ConcurrentServer {
       connectionTimeoutMillis: 2000,
     });
 
-    this.toolHandlers = new ToolHandlers(this.dbPool);
+  this.toolHandlers = new ToolHandlers(this.dbPool, redisClient as any);
 
     this.tools = tools.map((tool) => ({
       name: tool.name,
@@ -72,11 +73,12 @@ class ConcurrentServer {
   private initializeExpressApp() {
     this.expressApp = express();
 
-    // Trust the first proxy (nginx)
-    //this.expressApp.set('trust proxy', 1);
+    // Trust the first proxy (nginx, docker, etc.)
+    this.expressApp.set('trust proxy', 1);
+
     const allowedOrigins =
       process.env.NODE_ENV === "production"
-        ? ["https://joeltai.com"] // <-- set your prod domain here
+        ? ["https://joeltai.com","http://localhost:5173", "http://localhost:3000"] // <-- set your prod domain here
         : ["http://localhost:5173", "http://localhost:3000"];
 
     this.expressApp.use(
@@ -202,6 +204,14 @@ class ConcurrentServer {
 
 // Start the server
 async function main() {
+  try {
+    await connectRedis();
+    console.log("✅ Connected to Redis");
+  } catch (err) {
+    console.error("❌ Redis connection error:", err);
+    process.exit(1);
+  }
+
   const server = new ConcurrentServer();
   const PORT = parseInt(process.env.PORT || '4000');
 

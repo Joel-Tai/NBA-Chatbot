@@ -8,15 +8,46 @@ export interface ToolHandlerArgs {
 
 
 
+import { RedisClientType } from 'redis';
+
 export class ToolHandlers {
-  constructor(private pool: pg.Pool) {}
+  private redis?: RedisClientType;
+  constructor(private pool: pg.Pool, redisClient?: RedisClientType) {
+    this.redis = redisClient;
+  }
 
   async handleQuery(args: ToolHandlerArgs): Promise<CallToolResult> {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN TRANSACTION READ ONLY");
       const sql = args.sql as string;
-      const result = await client.query(sql);
+
+      // --- SQL Validation ---
+      // Only allow SELECT queries
+      const trimmed = sql.trim().toLowerCase();
+      if (!trimmed.startsWith("select")) {
+        return {
+          content: [{ type: "text", text: "Error: Only SELECT statements are allowed." }],
+          isError: true,
+        };
+      }
+      // Block dangerous keywords
+      const forbidden = [";", "drop ", "delete ", "update ", "insert ", "alter ", "create ", "grant ", "revoke ", "truncate ", "--", "/*", "*/"]; // basic
+      for (const word of forbidden) {
+        if (trimmed.includes(word)) {
+          return {
+            content: [{ type: "text", text: `Error: Query contains forbidden keyword: ${word}` }],
+            isError: true,
+          };
+        }
+      }
+      // Optionally, limit result size
+      let safeSql = sql;
+      if (!/limit\s+\d+/i.test(sql)) {
+        safeSql = sql.replace(/;*\s*$/g, "") + " LIMIT 100";
+      }
+
+      const result = await client.query(safeSql);
       return {
         content: [{ type: "text", text: JSON.stringify(result.rows, null, 2) }],
       };
@@ -34,12 +65,35 @@ export class ToolHandlers {
   }
 
   async handleGetPlayerRecentGames(args: ToolHandlerArgs): Promise<CallToolResult> {
+    // Redis cache key based on player name and numGames
+    const playerName = args.player_name as string;
+    const numGames = (args.num_games as number) || 10;
+    const cacheKey = `recentGames:${playerName.toLowerCase()}:${numGames}`;
+
+    // Timing start
+    const start = Date.now();
+
+    // Try Redis cache first
+    if (this.redis) {
+      try {
+        const cached = await this.redis.get(cacheKey);
+        if (cached) {
+          const elapsed = Date.now() - start;
+          console.log(`[RedisCache] handleGetPlayerRecentGames: fromCache=true, ms=${elapsed}`);
+          return {
+            content: [{ type: "text", text: cached }],
+            fromCache: true,
+            ms: elapsed,
+          };
+        }
+      } catch (err) {
+        console.warn("Redis get error:", err);
+      }
+    }
+
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN TRANSACTION READ ONLY");
-      const playerName = args.player_name as string;
-      const numGames = (args.num_games as number) || 10;
-      
       const sql = `
         SELECT 
           b.game_date,
@@ -66,14 +120,28 @@ export class ToolHandlers {
           b.plus_minus as "+/-"
         FROM players p
         JOIN boxscores b ON p.person_id = b.player_id
-        WHERE p.display_first_last ILIKE $1
+        WHERE UNACCENT(p.display_first_last) ILIKE UNACCENT($1)
         ORDER BY b.game_date DESC
         LIMIT $2
       `;
-      
       const result = await client.query(sql, [`%${playerName}%`, numGames]);
+      const resultText = JSON.stringify(result.rows, null, 2);
+
+      // Set Redis cache (expire in 5 min)
+      if (this.redis) {
+        try {
+          await this.redis.set(cacheKey, resultText, { EX: 300 });
+        } catch (err) {
+          console.warn("Redis set error:", err);
+        }
+      }
+
+      const elapsed = Date.now() - start;
+      console.log(`[RedisCache] handleGetPlayerRecentGames: fromCache=false, ms=${elapsed}`);
       return {
-        content: [{ type: "text", text: JSON.stringify(result.rows, null, 2) }],
+        content: [{ type: "text", text: resultText }],
+        fromCache: false,
+        ms: elapsed,
       };
     } catch (error) {
       return {
@@ -111,7 +179,7 @@ export class ToolHandlers {
           SUM(CASE WHEN b.wl = 'L' THEN 1 ELSE 0 END) as losses
         FROM players p 
         JOIN boxscores b ON p.person_id = b.player_id
-        WHERE p.display_first_last ILIKE $1
+        WHERE UNACCENT(p.display_first_last) ILIKE UNACCENT($1)
         GROUP BY p.display_first_last
       `;
       
@@ -154,7 +222,7 @@ export class ToolHandlers {
         FROM players p 
         JOIN teams t ON p.team_id = t.id
         JOIN boxscores b ON p.person_id = b.player_id
-        WHERE t.full_name ILIKE $1 OR t.abbreviation ILIKE $1
+        WHERE UNACCENT(t.full_name) ILIKE UNACCENT($1) OR UNACCENT(t.abbreviation) ILIKE UNACCENT($1)
         GROUP BY p.display_first_last
         ORDER BY p.display_first_last
       `;

@@ -17,13 +17,12 @@ export const About = () => {
           This Project
         </h1>
         <p className="text-gray-700 leading-relaxed">
-          The chatbot you're interacting with represents my passion for natural
-          language processing and database integration. Built with modern web
-          technologies, it uses advanced NLP techniques to understand user
-          queries and seamlessly translates them into SQL operations through MCP
-          (Model Context Protocol) servers. This allows users to interact with
-          databases using natural language rather than complex query syntax –
-          making data more accessible to everyone.
+          The chatbot you're interacting with represents my passion for AI and
+          basketball. Built with modern web technologies, it uses advanced NLP
+          techniques to understand user queries and seamlessly translates them
+          into SQL operations through MCP (Model Context Protocol) servers. This
+          allows users to interact with databases using natural language rather
+          than complex query syntax – making data more accessible to everyone.
         </p>
       </div>
 

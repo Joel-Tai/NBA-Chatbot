@@ -16,14 +16,14 @@ function Layout() {
   const location = useLocation();
 
   return (
-    <div>
+    <div className="min-h-screen flex flex-col">
       <Header searchInputRef={searchInputRef} />
-      <div>
-        <SidebarProvider className="">
+      <div className="flex-1 flex">
+        <SidebarProvider className="flex w-full">
           <AppSidebar />
-          <div className="flex-1">
-            <main>
-              <div className="container mx-auto">
+          <div className="flex-1 flex flex-col">
+            <main className="flex-1">
+              <div className="w-full">
                 {location.pathname === "/" ? (
                   <Home onQuery={handleQuery} />
                 ) : (

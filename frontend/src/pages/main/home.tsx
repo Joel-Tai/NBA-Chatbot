@@ -6,10 +6,12 @@ type HomeProps = {
 
 export const Home: React.FC<HomeProps> = ({ onQuery }) => {
   const queries = [
+    "Show me Nikola Jokic's recent game stats.",
     "Who has the most points in a single game?",
-    "What is LeBron James' career high in assists?",
-    "Show me the top 5 players by rebounds in the 2022 season.",
-    "What was the score of the Lakers vs Celtics game on Christmas?",
+    "What is LeBron James' season high in assists?",
+    "Show me the top 10 players by rebounds.",
+    "What is the kings roster?",
+    "Show me Stephen Curry's stats for the season.",
   ];
   return (
     <div className="container mx-auto p-6">
