@@ -5,7 +5,7 @@ A full-stack NBA chatbot web application powered by Node.js, PostgreSQL, Redis, 
 ## Features
 
 - **Frontend:** React (Vite), Tailwind CSS, modern UI
-- **Backend:** Node.js (Express, TypeScript), PostgreSQL, Redis caching
+- **Backend:** Node.js (Express, TypeScript), MCP, PostgreSQL, Redis caching
 - **Database:** NBA stats, player, and team data
 - **Rate Limiting:** Prevents abuse with express-rate-limit
 - **Dockerized:** Easy to run locally with Docker Compose
