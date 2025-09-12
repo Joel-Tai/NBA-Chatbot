@@ -70,20 +70,14 @@ export class ToolHandlers {
     const numGames = (args.num_games as number) || 10;
     const cacheKey = `recentGames:${playerName.toLowerCase()}:${numGames}`;
 
-    // Timing start
-    const start = Date.now();
-
     // Try Redis cache first
     if (this.redis) {
       try {
         const cached = await this.redis.get(cacheKey);
         if (cached) {
-          const elapsed = Date.now() - start;
-          console.log(`[RedisCache] handleGetPlayerRecentGames: fromCache=true, ms=${elapsed}`);
           return {
             content: [{ type: "text", text: cached }],
             fromCache: true,
-            ms: elapsed,
           };
         }
       } catch (err) {
@@ -136,12 +130,8 @@ export class ToolHandlers {
         }
       }
 
-      const elapsed = Date.now() - start;
-      console.log(`[RedisCache] handleGetPlayerRecentGames: fromCache=false, ms=${elapsed}`);
       return {
         content: [{ type: "text", text: resultText }],
-        fromCache: false,
-        ms: elapsed,
       };
     } catch (error) {
       return {
@@ -263,8 +253,20 @@ export class ToolHandlers {
         ft_pct: "SUM(b.ftm::numeric) / NULLIF(SUM(b.fta), 0)",
       };
 
+      const statToColumnMap: Record<string, string> = {
+      points: "avg_points",
+      rebounds: "avg_rebounds", 
+      assists: "avg_assists",
+      steals: "avg_steals",
+      blocks: "avg_blocks",
+      minutes: "avg_minutes",
+      fg_pct: "avg_fg_pct",
+      three_pct: "avg_3p_pct",
+      ft_pct: "avg_ft_pct",
+    };
       // Default to points if not found
       const statColumn = statMap[stat_cat.toLowerCase()] || "AVG(b.pts::numeric)";
+        const primaryColumn = statToColumnMap[stat_cat.toLowerCase()] || "avg_points";
 
       const sql = `
         SELECT 
@@ -286,10 +288,31 @@ export class ToolHandlers {
         ORDER BY ${statColumn} DESC
         LIMIT 10
       `;
-
+      console.log("stat_cat:", stat_cat, "-> statColumn:", statColumn);
       const result = await client.query(sql);
+      
+      const reorderColumns = (rows: any[], primaryCol: string) => {
+      return rows.map(row => {
+        const keys = Object.keys(row);
+        const primaryIndex = keys.indexOf(primaryCol);
+        
+        if (primaryIndex > -1) {
+          keys.splice(primaryIndex, 1);
+          keys.splice(1, 0, primaryCol); // Insert at position 1 (second column)
+        }
+        
+        const reordered: any = {};
+        keys.forEach(key => {
+          reordered[key] = row[key];
+        });
+        return reordered;
+      });
+    };
+
+    const reorderedRows = reorderColumns(result.rows, primaryColumn);
+
       return {
-        content: [{ type: "text", text: JSON.stringify(result.rows, null, 2) }],
+        content: [{ type: "text", text: JSON.stringify(reorderedRows, null, 2) }],
       };
     
     } catch (error) {

@@ -18,10 +18,19 @@ const Child_Display: React.FC<ChildComponentProps> = ({
   useEffect(() => {
     if (gameStats && Array.isArray(gameStats)) {
       setStats(gameStats);
-      // Set default sortKey to the first sortable column
+      // Set default sortKey to the first numeric column, else fallback to first column
       if (gameStats.length > 0) {
-        const firstCol = Object.keys(gameStats[0])[0];
-        setSortKey(firstCol);
+        const keys = Object.keys(gameStats[0]);
+        const firstNumericCol = keys.find((key) =>
+          gameStats.every((row) => {
+            const val = row[key];
+            return (
+              typeof val === "number" ||
+              (typeof val === "string" && /^-?\d+(\.\d+)?$/.test(val.trim()))
+            );
+          })
+        );
+        setSortKey(firstNumericCol || keys[0]);
       }
     }
   }, [gameStats]);
@@ -64,11 +73,23 @@ const Child_Display: React.FC<ChildComponentProps> = ({
   }, [stats]);
 
   const handleRowClick = (row: any) => {
-    alert(`Clicked on: ${JSON.stringify(row, null, 2)}`);
+    console.log("Row clicked:", row);
   };
 
   if (!stats || stats.length === 0)
     return <div className="p-4">No data available</div>;
+
+  // Determine if the selected column is numeric for all rows
+  const isSortKeyNumeric =
+    sortKey &&
+    stats.length > 0 &&
+    stats.every((row) => {
+      const val = row[sortKey];
+      return (
+        typeof val === "number" ||
+        (typeof val === "string" && /^-?\d+(\.\d+)?$/.test(val.trim()))
+      );
+    });
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -80,9 +101,14 @@ const Child_Display: React.FC<ChildComponentProps> = ({
         sortKey={sortKey}
         setSortKey={setSortKey}
       />
-      {resType === "get_player_recent_games" && (
-        <LineChart data={stats} columns={columns} sortKey={sortKey} />
-      )}
+      {resType === "get_player_recent_games" &&
+        (isSortKeyNumeric ? (
+          <LineChart data={stats} columns={columns} sortKey={sortKey} />
+        ) : (
+          <div className="mt-8 p-4 bg-blue-50 text-gray-900 rounded text-center">
+            Select a stat column to display a line chart.
+          </div>
+        ))}
     </div>
   );
 };

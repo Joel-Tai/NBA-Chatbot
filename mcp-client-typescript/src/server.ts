@@ -78,7 +78,7 @@ class ConcurrentServer {
 
     const allowedOrigins =
       process.env.NODE_ENV === "production"
-        ? ["https://joeltai.com","http://localhost:5173", "http://localhost:3000"] // <-- set your prod domain here
+        ? ["https://joeltai.com"] // <-- set your prod domain here
         : ["http://localhost:5173", "http://localhost:3000"];
 
     this.expressApp.use(

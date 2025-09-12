@@ -80,6 +80,18 @@ export function LineChart<T extends Record<string, any>>({
   // Determine if the selected column is "min"
   const isMinCol = sortKey && sortKey.toString().toLowerCase() === "min";
 
+  // If min column and any value > 48, set y.max to 60
+  let yMax: number | undefined = isMinCol ? 48 : undefined;
+  if (isMinCol) {
+    const hasOver48 = data.some((row) => {
+      const val = row[sortKey];
+      if (typeof val === "number") return val > 48;
+      if (isNumericString(val)) return parseFloat(val) > 48;
+      return false;
+    });
+    if (hasOver48) yMax = 60;
+  }
+
   return (
     <div className="mt-8">
       <Line
@@ -104,7 +116,7 @@ export function LineChart<T extends Record<string, any>>({
                   String(sortKey),
               },
               min: isMinCol ? 0 : undefined,
-              max: isMinCol ? 48 : undefined,
+              max: yMax,
             },
           },
         }}

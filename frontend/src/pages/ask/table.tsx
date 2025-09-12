@@ -16,7 +16,7 @@ export function DynamicTable<T extends Record<string, any>>({
   setSortKey,
 }: TableProps<T>) {
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">(
-    "asc"
+    "desc"
   );
 
   const handleSort = (key: keyof T) => {
