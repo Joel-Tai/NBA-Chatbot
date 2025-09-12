@@ -35,7 +35,7 @@ const items = [
   },
   {
     title: "Resume",
-    url: "/assets/joel_tai.pdf",
+    url: "/joel_tai_resume.pdf",
     icon: FileUser,
     download: true,
   },
