@@ -6,21 +6,21 @@ function Contact() {
         <p className="mb-2">
           Email:{" "}
           <a
-            href="mailto:your.email@example.com"
+            href="mailto:joeltai6@gmail.com"
             className="text-blue-600 underline hover:text-blue-800"
           >
-            your.email@example.com
+            joeltai6@gmail.com
           </a>
         </p>
         <p className="mb-2">
           LinkedIn:{" "}
           <a
-            href="https://www.linkedin.com/in/your-linkedin/"
+            href="https://www.linkedin.com/in/joel-tai/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 underline hover:text-blue-800"
           >
-            linkedin.com/in/your-linkedin
+            linkedin.com/in/joel-tai
           </a>
         </p>
         <p>
